@@ -85,7 +85,7 @@ jobs:
         run: semgrep --version
 
       - name: Rodar Semgrep com regras de segurança
-        run: semgrep --config=p/ci --exclude '**/.git/**' --verbose
+        run: semgrep --config=p/security-audit --exclude '**/.git/**' --verbose --error
 
       - name: Rodar Semgrep com regra para SELECT * de arquivo externo
         run: |
