@@ -1,0 +1,127 @@
+name: Security Scan (SAST)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
+jobs:
+  codeql-scan:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: java
+          queries: +security-and-quality
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Criar diretório de libs e baixar dependências
+        run: |
+          mkdir -p libs
+          wget -q https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar -P libs/
+
+      - name: Detectar ferramenta de build e compilar
+        run: |
+          if [ -f "pom.xml" ]; then
+            echo "Maven detectado. Resolvendo dependências..."
+            mvn dependency:resolve || echo "Erro ao resolver dependências"
+            echo "Executando mvn clean install..."
+            mvn clean install -DskipTests || echo "Erro de compilação, continuando com a análise..."
+          elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
+            echo "Gradle detectado. Executando ./gradlew build..."
+            chmod +x gradlew
+            ./gradlew build -x test || echo "Erro de compilação, continuando com a análise..."
+          elif ls *.java 1> /dev/null 2>&1; then
+            echo "Java puro detectado. Compilando com javac..."
+            mkdir -p bin
+            find . -name "*.java" > sources.txt
+            javac -cp .:libs/* -d bin @sources.txt || echo "Erro de compilação, continuando com a análise..."
+          else
+            echo "Nenhuma ferramenta de build detectada."
+            exit 1
+          fi
+
+      - name: Rodar análise CodeQL
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/security-and-quality"
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar e atualizar Semgrep
+        run: |
+          pip install --upgrade semgrep
+          
+      - name: Verificar instalação do Semgrep
+        run: semgrep --version
+
+      - name: Rodar Semgrep com regras de segurança
+        run: semgrep --config=p/ci --exclude '**/.git/**' --verbose
+
+      - name: Rodar Semgrep com regra para SELECT * de arquivo externo
+        run: |
+          echo "Executando Semgrep com a regra personalizada para SELECT *"
+          semgrep --config=./semgrep-rules/select_star_rule.yml --exclude '**/.git/**' --verbose
+
+      - name: Exibir versão do Semgrep
+        run: |
+          semgrep --version
+      
+      - name: Exibir conteúdo da regra
+        run: |
+          cat semgrep-rules/select_star_rule.yml
+
+
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar a versão mais recente do Trivy
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl wget jq
+          
+          # Buscar a versão mais recente no GitHub Releases
+          TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r '.tag_name' | sed 's/v//')
+          if [ -z "$TRIVY_VERSION" ]; then
+            echo "Falha ao obter a versão mais recente do Trivy."
+            exit 1
+          fi
+          echo "Instalando Trivy versão $TRIVY_VERSION..."
+          wget -q https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+          rm -f trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+      - name: Verificar instalação do Trivy
+        run: trivy --version
+
+      - name: Rodar Trivy no código-fonte
+        run: trivy fs --exit-code 1 --severity HIGH,CRITICAL --skip-dirs .git,node_modules .
