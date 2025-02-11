@@ -3,4 +3,5 @@ rules:
     languages: [java, yaml]
     severity: ERROR
     message: "Spring Security está desativado! Isso pode expor sua aplicação a ataques."
-    pattern: "security.ignored="
+    pattern: |
+      disableSecurity()
