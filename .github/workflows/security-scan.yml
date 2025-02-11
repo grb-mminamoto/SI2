@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
 
       - name: Configurar CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
           queries: +security-and-quality
@@ -63,7 +63,7 @@ jobs:
           fi
 
       - name: Rodar análise CodeQL
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
 
