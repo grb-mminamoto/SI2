@@ -2,5 +2,5 @@ rules:
   - id: sql-select-star
     pattern: SELECT *
     message: "Uso de SELECT * detectado"
-    languages: [sql]
+    languages: [generic]
     severity: WARNING
