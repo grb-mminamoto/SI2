@@ -1,0 +1,9 @@
+rules:
+  - id: xss-detected
+    languages: [java]
+    severity: ERROR
+    message: "Entrada do usuário não sanitizada pode levar a XSS. Utilize frameworks de sanitização como OWASP Java Encoder."
+    pattern: |
+      response.getWriter().write($X);
+    pattern-not-inside: |
+      response.getWriter().write(Encoder.forHtml($X));
