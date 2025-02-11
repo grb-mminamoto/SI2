@@ -87,7 +87,7 @@ jobs:
       - name: Rodar Semgrep com regra para SELECT * de arquivo externo
         run: |
           echo "Executando Semgrep com a regra personalizada para SELECT *"
-          semgrep --config=./semgrep-rules/select_star_rule.yml --exclude '**/.git/**' --pattern='**/*.sql' --lang=sql --verbose
+          semgrep --config=./semgrep-rules/select_star_rule.yml --exclude '**/.git/**' --include '**/*.sql' --lang=generic --verbose
 
       - name: Exibir versão do Semgrep
         run: |
