@@ -128,3 +128,22 @@ jobs:
 
       - name: Rodar Trivy no código-fonte
         run: trivy fs --exit-code 1 --severity HIGH,CRITICAL --skip-dirs .git,node_modules .
+
+  dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Executar OWASP Dependency-Check
+        run: |
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.1/dependency-check-8.4.1-release.zip
+          unzip dependency-check-8.4.1-release.zip
+          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
