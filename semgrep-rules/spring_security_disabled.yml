@@ -1,8 +1,6 @@
 rules:
   - id: spring-security-disabled
-    languages: [yaml, generic]
+    languages: [java, yaml]
     severity: ERROR
     message: "Spring Security está desativado! Isso pode expor sua aplicação a ataques."
-    patterns:
-      - pattern: "security.ignored="
-      - pattern: "spring.security.*disable"
+    pattern: "security.ignored="
