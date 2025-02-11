@@ -1,0 +1,6 @@
+rules:
+  - id: detect-select-star
+    pattern: 'SELECT\s+\*'  # Escapando o asterisco para garantir correspondência exata
+    message: 'Evite usar SELECT * em consultas SQL'
+    languages: [generic]
+    severity: WARNING
