@@ -87,19 +87,8 @@ jobs:
       - name: Rodar Semgrep com regras de segurança
         run: semgrep --config=p/security-audit --exclude '**/.git/**' --verbose --error
 
-      - name: Rodar Semgrep com regra para SELECT * de arquivo externo
-        run: |
-          echo "Executando Semgrep com a regra personalizada para SELECT *"
-          semgrep --config=./semgrep-rules/select_star_rule.yml --config=./semgrep-rules/java-rule.yml --exclude '**/.git/**' --include '**/*.sql' --include '**/*.java' --verbose .
-
-      - name: Exibir versão do Semgrep
-        run: |
-          semgrep --version
-      
-      - name: Exibir conteúdo da regra
-        run: |
-          cat semgrep-rules/select_star_rule.yml
-
+      - name: Rodar Semgrep com regras personalizadas
+        run: semgrep --config=./semgrep-rules --exclude '**/.git/**' --include '**/*.java' --verbose .
 
   trivy-scan:
     name: Trivy Security Scan
