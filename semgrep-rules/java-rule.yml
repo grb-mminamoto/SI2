@@ -1,0 +1,7 @@
+rules:
+  - id: java-insecure-practice
+    pattern: |
+      new java.util.Date()
+    message: "Evite o uso da classe java.util.Date() diretamente."
+    languages: [java]
+    severity: WARNING
