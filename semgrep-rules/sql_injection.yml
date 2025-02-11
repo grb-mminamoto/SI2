@@ -1,0 +1,6 @@
+rules:
+  - id: avoid-statement-sql
+    languages: [java]
+    severity: ERROR
+    message: "Uso de Statement detectado! Prefira PreparedStatement para evitar SQL Injection."
+    pattern: "Statement stmt = $X.createStatement();"
