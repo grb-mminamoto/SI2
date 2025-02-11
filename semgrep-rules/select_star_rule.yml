@@ -1,7 +1,6 @@
 rules:
   - id: sql-select-star
-    pattern: |
-      SELECT $FIELD* FROM $TABLE
-    message: "Uso de SELECT * detectado. Evite usar SELECT * em consultas SQL."
-    languages: [generic]
+    pattern: SELECT *
+    message: "Uso de SELECT * detectado"
+    languages: [sql]
     severity: WARNING
