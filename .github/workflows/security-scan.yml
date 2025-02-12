@@ -128,7 +128,7 @@ jobs:
           key: ${{ runner.os }}-dependency-check
           restore-keys: |
             ${{ runner.os }}-dependency-check
-      
+          
       - name: Checkout código
         uses: actions/checkout@v4
 
@@ -138,12 +138,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Baixar OWASP Dependency-Check
+        run: |
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.5.0/dependency-check-8.5.0-release.zip
+          unzip dependency-check-8.5.0-release.zip
+
       - name: Executar OWASP Dependency-Check
         run: |
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.1/dependency-check-8.4.1-release.zip
-          unzip dependency-check-8.4.1-release.zip
-          
-          # Desativar logging para evitar erro no logback.xml
           export SUPPRESS_LOGGING=true
-          
-          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports || echo "⚠️ Dependency-Check falhou, mas o pipeline continuará..."
+          dependency-check/bin/dependency-check.sh --scan . --project "VulnerableApp" --format HTML --out reports || echo "⚠️ Dependency-Check falhou, mas o pipeline continuará..."
