@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  codeql-scan:
+   codeql-scan:
     name: CodeQL Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -30,14 +30,19 @@ jobs:
           languages: java
           queries: security-extended,security-and-quality
           build-mode: manual
+          source-root: .
           ram: 4096
-
 
       - name: Configurar Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      - name: Verificar se há código Java no repositório
+        run: |
+          echo "Verificando arquivos Java..."
+          find . -name "*.java" || { echo "Nenhum código Java encontrado!"; exit 1; }
 
       - name: Criar diretório de libs e baixar dependências
         run: |
@@ -48,18 +53,18 @@ jobs:
         run: |
           if [ -f "pom.xml" ]; then
             echo "Maven detectado. Resolvendo dependências..."
-            mvn dependency:resolve || echo "Erro ao resolver dependências"
+            mvn dependency:resolve
             echo "Executando mvn clean install..."
-            mvn clean install -DskipTests || echo "Erro de compilação, continuando com a análise..."
+            mvn clean install -DskipTests
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
             echo "Gradle detectado. Executando ./gradlew build..."
             chmod +x gradlew
-            ./gradlew build -x test || echo "Erro de compilação, continuando com a análise..."
+            ./gradlew build -x test
           elif ls *.java 1> /dev/null 2>&1; then
             echo "Java puro detectado. Compilando com javac..."
             mkdir -p bin
             find . -name "*.java" > sources.txt
-            javac -cp .:libs/* -d bin @sources.txt || echo "Erro de compilação, continuando com a análise..."
+            javac -cp .:libs/* -d bin @sources.txt
           else
             echo "Nenhuma ferramenta de build detectada."
             exit 1
@@ -69,6 +74,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
+
 
   semgrep-scan:
     name: Semgrep Security Scan
