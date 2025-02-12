@@ -53,10 +53,10 @@ jobs:
           echo "📥 Baixando dependências..."
           download "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar" "libs/javax.servlet-api-4.0.1.jar"
           download "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar" "libs/jackson-databind-2.15.2.jar"
-          download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.33/mysql-connector-java-8.0.33.jar" "libs/mysql-connector-java-8.0.33.jar"
+          download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar" "libs/mysql-connector-java-8.0.30.jar"
 
           echo "✅ Verificando downloads..."
-          if [ ! -s "libs/javax.servlet-api-4.0.1.jar" ] || [ ! -s "libs/jackson-databind-2.15.2.jar" ] || [ ! -s "libs/mysql-connector-java-8.0.33.jar" ]; then
+          if [ ! -s "libs/javax.servlet-api-4.0.1.jar" ] || [ ! -s "libs/jackson-databind-2.15.2.jar" ] || [ ! -s "libs/mysql-connector-java-8.0.30.jar" ]; then
             echo "❌ Falha ao baixar dependências. Abortando..."
             exit 1
           fi
