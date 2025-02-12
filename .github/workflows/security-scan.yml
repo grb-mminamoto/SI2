@@ -53,10 +53,20 @@ jobs:
           echo "📥 Baixando dependências..."
           download "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar" "libs/javax.servlet-api-4.0.1.jar"
           download "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar" "libs/jackson-databind-2.15.2.jar"
-          download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.30/mysql-connector-java-8.0.30.jar" "libs/mysql-connector-java-8.0.30.jar"
+
+          echo "🔍 Obtendo a versão mais recente do MySQL Connector-J..."
+          MYSQL_CONNECTOR_VERSION=$(wget -qO- https://repo1.maven.org/maven2/mysql/mysql-connector-java/ | grep -oP '(?<=<a href=")[0-9]+\.[0-9]+\.[0-9]+(?=/")' | sort -V | tail -n 1)
+          
+          if [ -z "$MYSQL_CONNECTOR_VERSION" ]; then
+            echo "❌ Erro ao obter a versão mais recente do MySQL Connector-J"
+            exit 1
+          fi
+
+          echo "📦 Última versão encontrada: $MYSQL_CONNECTOR_VERSION"
+          download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar" "libs/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar"
 
           echo "✅ Verificando downloads..."
-          if [ ! -s "libs/javax.servlet-api-4.0.1.jar" ] || [ ! -s "libs/jackson-databind-2.15.2.jar" ] || [ ! -s "libs/mysql-connector-java-8.0.30.jar" ]; then
+          if [ ! -s "libs/javax.servlet-api-4.0.1.jar" ] || [ ! -s "libs/jackson-databind-2.15.2.jar" ] || [ ! -s "libs/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar" ]; then
             echo "❌ Falha ao baixar dependências. Abortando..."
             exit 1
           fi
@@ -79,20 +89,8 @@ jobs:
             ./gradlew classes || { echo "❌ Erro de compilação"; exit 1; }
 
           elif ls *.java 1> /dev/null 2>&1; then
-            echo "🛠️ Java puro detectado. Compilando com javac..."
-            mkdir -p bin
-            find . -name "*.java" > sources.txt
-            javac -cp .:libs/* -d bin @sources.txt || { echo "❌ Erro de compilação"; exit 1; }
+            echo "🛠️ Java puro
 
-          else
-            echo "🚨 Nenhuma ferramenta de build detectada! Abortando..."
-            exit 1
-          fi
-
-      - name: Rodar análise CodeQL
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/security-and-quality"
 
 
   semgrep-scan:
