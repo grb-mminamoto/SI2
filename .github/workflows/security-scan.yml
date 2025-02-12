@@ -43,23 +43,25 @@ jobs:
         run: |
           mkdir -p libs
           wget -q https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar -P libs/
+          wget -q https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar -P libs/
+          wget -q https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.33/mysql-connector-java-8.0.33.jar -P libs/
 
       - name: Detectar ferramenta de build e compilar
         run: |
-          set -e  # Para execução em caso de erro
+          set -e  # Aborta execução em caso de erro
           echo "🏗️ Detectando ferramenta de build..."
           
           if [ -f "pom.xml" ]; then
             echo "🛠️ Maven detectado. Resolvendo dependências..."
             mvn dependency:resolve || { echo "❌ Erro ao resolver dependências"; exit 1; }
-            echo "📦 Executando mvn clean install..."
-            mvn clean install -DskipTests || { echo "❌ Erro de compilação"; exit 1; }
+            echo "📦 Executando mvn clean compile..."
+            mvn clean compile || { echo "❌ Erro de compilação"; exit 1; }
           
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
             echo "🛠️ Gradle detectado. Configurando permissões..."
             chmod +x gradlew
-            echo "📦 Executando ./gradlew build..."
-            ./gradlew build -x test || { echo "❌ Erro de compilação"; exit 1; }
+            echo "📦 Executando ./gradlew classes..."
+            ./gradlew classes || { echo "❌ Erro de compilação"; exit 1; }
 
           elif ls *.java 1> /dev/null 2>&1; then
             echo "🛠️ Java puro detectado. Compilando com javac..."
@@ -76,6 +78,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
+
 
   semgrep-scan:
     name: Semgrep Security Scan
