@@ -55,15 +55,14 @@ jobs:
           download "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar" "libs/jackson-databind-2.15.2.jar"
           
           echo "🔍 Obtendo a versão mais recente do MySQL Connector-J..."
-          # Realizar a requisição e armazenar a resposta
-          response=$(curl -s "https://search.maven.org/solrsearch/select?q=g:mysql+AND+artifactId:mysql-connector-java&rows=20&wt=json")
+          response=$(curl -s "https://search.maven.org/solrsearch/select?q=g:mysql+AND+a:mysql-connector-java&rows=1&wt=json")
           
-          # Exibir a resposta completa para depuração
+          # Exibir a resposta para depuração
           echo "Resposta do Maven Central:"
           echo "$response"
           
-          # Processar a versão usando jq, verificar erros
-          MYSQL_CONNECTOR_VERSION=$(echo "$response" | jq -r '.response.docs[0].v' 2>/dev/null)
+          # Processar a versão usando jq
+          MYSQL_CONNECTOR_VERSION=$(echo "$response" | jq -r '.response.docs[0].latestVersion' 2>/dev/null)
           
           # Verifique se a versão foi encontrada
           if [ -z "$MYSQL_CONNECTOR_VERSION" ]; then
@@ -72,7 +71,6 @@ jobs:
           fi
           
           echo "📦 Última versão encontrada: $MYSQL_CONNECTOR_VERSION"
-          
           download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar" "libs/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar"
 
           echo "✅ Verificando downloads..."
