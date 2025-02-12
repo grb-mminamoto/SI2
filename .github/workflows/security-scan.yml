@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  codeql-scan:
+codeql-scan:
     name: CodeQL Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -24,20 +24,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configurar CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java
-          queries: security-extended,security-and-quality
-          build-mode: autobuild  # Tenta detectar automaticamente o build antes de cair no manual
-          source-root: .
-          ram: 4096
-
       - name: Configurar Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      - name: Configurar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+          queries: security-extended,security-and-quality
+          build-mode: manual  # 🚨 Forçando modo manual para evitar erro de autobuild
+          source-root: .
+          ram: 4096
 
       - name: Criar diretório de libs e baixar dependências
         run: |
@@ -46,23 +46,29 @@ jobs:
 
       - name: Detectar ferramenta de build e compilar
         run: |
-          set -e  # Força erro se algum comando falhar
+          set -e  # Para execução em caso de erro
+          echo "🏗️ Detectando ferramenta de build..."
+          
           if [ -f "pom.xml" ]; then
-            echo "Maven detectado. Resolvendo dependências..."
+            echo "🛠️ Maven detectado. Resolvendo dependências..."
             mvn dependency:resolve || { echo "❌ Erro ao resolver dependências"; exit 1; }
-            echo "Executando mvn clean install..."
+            echo "📦 Executando mvn clean install..."
             mvn clean install -DskipTests || { echo "❌ Erro de compilação"; exit 1; }
+          
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
-            echo "Gradle detectado. Executando ./gradlew build..."
+            echo "🛠️ Gradle detectado. Configurando permissões..."
             chmod +x gradlew
+            echo "📦 Executando ./gradlew build..."
             ./gradlew build -x test || { echo "❌ Erro de compilação"; exit 1; }
+
           elif ls *.java 1> /dev/null 2>&1; then
-            echo "Java puro detectado. Compilando com javac..."
+            echo "🛠️ Java puro detectado. Compilando com javac..."
             mkdir -p bin
             find . -name "*.java" > sources.txt
             javac -cp .:libs/* -d bin @sources.txt || { echo "❌ Erro de compilação"; exit 1; }
+
           else
-            echo "🚨 Nenhuma ferramenta de build detectada. Abortando..."
+            echo "🚨 Nenhuma ferramenta de build detectada! Abortando..."
             exit 1
           fi
 
@@ -70,6 +76,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
+
 
 
   semgrep-scan:
