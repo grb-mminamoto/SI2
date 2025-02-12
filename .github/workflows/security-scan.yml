@@ -123,6 +123,14 @@ jobs:
     name: OWASP Dependency-Check
     runs-on: ubuntu-latest
     steps:
+      - name: Cache do OWASP Dependency-Check
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-dependency-check
+          restore-keys: |
+            ${{ runner.os }}-dependency-check
+
       - name: Checkout código
         uses: actions/checkout@v4
 
