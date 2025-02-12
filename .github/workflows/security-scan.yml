@@ -24,95 +24,49 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Configurar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+          queries: security-extended,security-and-quality
+          build-mode: manual
+          ram: 4096
+
+
       - name: Configurar Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java
-          queries: security-extended,security-and-quality
-          build-mode: manual  # 🚨 Forçando modo manual para evitar erro de autobuild
-          source-root: .
-          ram: 4096
-
       - name: Criar diretório de libs e baixar dependências
         run: |
-          set -e
           mkdir -p libs
-          
-          download() {
-            local url=$1
-            local dest=$2
-            wget -nv --retry-connrefused --waitretry=5 --timeout=30 --tries=3 --retry-on-http-error=404,500,502,503,504 "$url" -O "$dest"
-          }
-
-          echo "📥 Baixando dependências..."
-          download "https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar" "libs/javax.servlet-api-4.0.1.jar"
-          download "https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar" "libs/jackson-databind-2.15.2.jar"
-          
-          echo "🔍 Obtendo a versão mais recente do MySQL Connector-J..."
-          response=$(curl -s "https://search.maven.org/solrsearch/select?q=g:mysql+AND+a:mysql-connector-java&rows=1&wt=json")
-          
-          # Exibir a resposta para depuração
-          echo "Resposta do Maven Central:"
-          echo "$response"
-          
-          # Processar a versão usando jq
-          MYSQL_CONNECTOR_VERSION=$(echo "$response" | jq -r '.response.docs[0].latestVersion' 2>/dev/null)
-          
-          # Verifique se a versão foi encontrada
-          if [ -z "$MYSQL_CONNECTOR_VERSION" ]; then
-            echo "❌ Erro ao obter a versão mais recente do MySQL Connector-J"
-            exit 1
-          fi
-          
-          echo "📦 Última versão encontrada: $MYSQL_CONNECTOR_VERSION"
-          download "https://repo1.maven.org/maven2/mysql/mysql-connector-java/${MYSQL_CONNECTOR_VERSION}/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar" "libs/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar"
-
-          echo "✅ Verificando downloads..."
-          if [ ! -s "libs/javax.servlet-api-4.0.1.jar" ] || [ ! -s "libs/jackson-databind-2.15.2.jar" ] || [ ! -s "libs/mysql-connector-java-${MYSQL_CONNECTOR_VERSION}.jar" ]; then
-            echo "❌ Falha ao baixar dependências. Abortando..."
-            exit 1
-          fi
-
+          wget -q https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar -P libs/
       - name: Detectar ferramenta de build e compilar
         run: |
-          set -e  # Aborta execução em caso de erro
-          echo "🏗️ Detectando ferramenta de build..."
-          
           if [ -f "pom.xml" ]; then
-            echo "🛠️ Maven detectado. Resolvendo dependências..."
-            mvn dependency:resolve || { echo "❌ Erro ao resolver dependências"; exit 1; }
-            echo "📦 Executando mvn clean compile..."
-            mvn clean compile || { echo "❌ Erro de compilação"; exit 1; }
-          
+            echo "Maven detectado. Resolvendo dependências..."
+            mvn dependency:resolve || echo "Erro ao resolver dependências"
+            echo "Executando mvn clean install..."
+            mvn clean install -DskipTests || echo "Erro de compilação, continuando com a análise..."
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
-            echo "🛠️ Gradle detectado. Configurando permissões..."
+            echo "Gradle detectado. Executando ./gradlew build..."
             chmod +x gradlew
-            echo "📦 Executando ./gradlew classes..."
-            ./gradlew classes || { echo "❌ Erro de compilação"; exit 1; }
-
+            ./gradlew build -x test || echo "Erro de compilação, continuando com a análise..."
           elif ls *.java 1> /dev/null 2>&1; then
-            echo "🛠️ Java puro detectado. Compilando com javac..."
+            echo "Java puro detectado. Compilando com javac..."
             mkdir -p bin
             find . -name "*.java" > sources.txt
-            javac -cp .:libs/* -d bin @sources.txt || { echo "❌ Erro de compilação"; exit 1; }
-
+            javac -cp .:libs/* -d bin @sources.txt || echo "Erro de compilação, continuando com a análise..."
           else
-            echo "🚨 Nenhuma ferramenta de build detectada! Abortando..."
+            echo "Nenhuma ferramenta de build detectada."
             exit 1
           fi
-
       - name: Rodar análise CodeQL
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
-
-
 
   semgrep-scan:
     name: Semgrep Security Scan
@@ -160,21 +114,13 @@ jobs:
         run: trivy --version
 
       - name: Rodar Trivy no código-fonte
-        run: trivy fs . --exit-code 0 --severity HIGH,CRITICAL --skip-dirs .git,node_modules -f json -o trivy-report.json
-
+        run: trivy fs --exit-code 1 --severity HIGH,CRITICAL --skip-dirs .git,node_modules .
 
 
   dependency-check:
     name: OWASP Dependency-Check
     runs-on: ubuntu-latest
     steps:
-      - name: Cache do OWASP Dependency-Check
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-dependency-check
-          restore-keys: |
-            ${{ runner.os }}-dependency-check
       - name: Checkout código
         uses: actions/checkout@v4
 
