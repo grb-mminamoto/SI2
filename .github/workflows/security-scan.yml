@@ -29,10 +29,9 @@ jobs:
         with:
           languages: java
           queries: security-extended,security-and-quality
-          build-mode: manual
+          build-mode: autobuild  # Tenta detectar automaticamente o build antes de cair no manual
           source-root: .
           ram: 4096
-
 
       - name: Configurar Java 17
         uses: actions/setup-java@v4
@@ -44,30 +43,34 @@ jobs:
         run: |
           mkdir -p libs
           wget -q https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar -P libs/
+
       - name: Detectar ferramenta de build e compilar
         run: |
+          set -e  # Força erro se algum comando falhar
           if [ -f "pom.xml" ]; then
             echo "Maven detectado. Resolvendo dependências..."
-            mvn dependency:resolve || echo "Erro ao resolver dependências"
+            mvn dependency:resolve || { echo "❌ Erro ao resolver dependências"; exit 1; }
             echo "Executando mvn clean install..."
-            mvn clean install -DskipTests 
+            mvn clean install -DskipTests || { echo "❌ Erro de compilação"; exit 1; }
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
             echo "Gradle detectado. Executando ./gradlew build..."
             chmod +x gradlew
-            ./gradlew build -x test || echo "Erro de compilação, continuando com a análise..."
+            ./gradlew build -x test || { echo "❌ Erro de compilação"; exit 1; }
           elif ls *.java 1> /dev/null 2>&1; then
             echo "Java puro detectado. Compilando com javac..."
             mkdir -p bin
             find . -name "*.java" > sources.txt
-            javac -cp .:libs/* -d bin @sources.txt || echo "Erro de compilação, continuando com a análise..."
+            javac -cp .:libs/* -d bin @sources.txt || { echo "❌ Erro de compilação"; exit 1; }
           else
-            echo "Nenhuma ferramenta de build detectada."
+            echo "🚨 Nenhuma ferramenta de build detectada. Abortando..."
             exit 1
           fi
+
       - name: Rodar análise CodeQL
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
+
 
   semgrep-scan:
     name: Semgrep Security Scan
