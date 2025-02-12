@@ -30,6 +30,7 @@ jobs:
           languages: java
           queries: security-extended,security-and-quality
           build-mode: manual
+          source-root: .
           ram: 4096
 
 
@@ -49,7 +50,7 @@ jobs:
             echo "Maven detectado. Resolvendo dependências..."
             mvn dependency:resolve || echo "Erro ao resolver dependências"
             echo "Executando mvn clean install..."
-            mvn clean install -DskipTests || echo "Erro de compilação, continuando com a análise..."
+            mvn clean install -DskipTests 
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
             echo "Gradle detectado. Executando ./gradlew build..."
             chmod +x gradlew
