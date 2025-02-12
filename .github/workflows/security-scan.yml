@@ -116,7 +116,7 @@ jobs:
         run: trivy --version
 
       - name: Rodar Trivy no código-fonte
-        run: trivy fs --exit-code 0 --severity HIGH,CRITICAL --skip-dirs .git,node_modules -f json -o trivy-report.json
+        run: trivy fs . --exit-code 0 --severity HIGH,CRITICAL --skip-dirs .git,node_modules -f json -o trivy-report.json
 
 
 
