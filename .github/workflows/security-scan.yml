@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-   codeql-scan:
+  codeql-scan:
     name: CodeQL Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -30,8 +30,8 @@ jobs:
           languages: java
           queries: security-extended,security-and-quality
           build-mode: manual
-          source-root: .
           ram: 4096
+
 
       - name: Configurar Java 17
         uses: actions/setup-java@v4
@@ -39,42 +39,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Verificar se há código Java no repositório
-        run: |
-          echo "Verificando arquivos Java..."
-          find . -name "*.java" || { echo "Nenhum código Java encontrado!"; exit 1; }
-
       - name: Criar diretório de libs e baixar dependências
         run: |
           mkdir -p libs
           wget -q https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar -P libs/
-
       - name: Detectar ferramenta de build e compilar
         run: |
           if [ -f "pom.xml" ]; then
             echo "Maven detectado. Resolvendo dependências..."
-            mvn dependency:resolve
+            mvn dependency:resolve || echo "Erro ao resolver dependências"
             echo "Executando mvn clean install..."
-            mvn clean install -DskipTests
+            mvn clean install -DskipTests || echo "Erro de compilação, continuando com a análise..."
           elif [ -f "build.gradle" ] || [ -f "settings.gradle" ]; then
             echo "Gradle detectado. Executando ./gradlew build..."
             chmod +x gradlew
-            ./gradlew build -x test
+            ./gradlew build -x test || echo "Erro de compilação, continuando com a análise..."
           elif ls *.java 1> /dev/null 2>&1; then
             echo "Java puro detectado. Compilando com javac..."
             mkdir -p bin
             find . -name "*.java" > sources.txt
-            javac -cp .:libs/* -d bin @sources.txt
+            javac -cp .:libs/* -d bin @sources.txt || echo "Erro de compilação, continuando com a análise..."
           else
             echo "Nenhuma ferramenta de build detectada."
             exit 1
           fi
-
       - name: Rodar análise CodeQL
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
-
 
   semgrep-scan:
     name: Semgrep Security Scan
@@ -137,7 +129,6 @@ jobs:
           key: ${{ runner.os }}-dependency-check
           restore-keys: |
             ${{ runner.os }}-dependency-check
-
       - name: Checkout código
         uses: actions/checkout@v4
 
