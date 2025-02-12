@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-codeql-scan:
+  codeql-scan:
     name: CodeQL Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -76,8 +76,6 @@ codeql-scan:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/security-and-quality"
-
-
 
   semgrep-scan:
     name: Semgrep Security Scan
