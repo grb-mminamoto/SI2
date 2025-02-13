@@ -16,10 +16,10 @@ jobs:
       - name: Cache do OWASP Dependency-Check Database
         uses: actions/cache@v3
         with:
-          path: ~/.dependency-check/data
-          key: ${{ runner.os }}-dependency-check-db
+          path: ~/.dependency-check
+          key: ${{ runner.os }}-dependency-check-db-v2
           restore-keys: |
-            ${{ runner.os }}-dependency-check-db
+            ${{ runner.os }}-dependency-check-db-v2
 
       - name: Checkout código
         uses: actions/checkout@v4
@@ -30,9 +30,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar API Key da NVD
-        run: echo "export NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
-
       - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
           DEPENDENCY_CHECK_VERSION="9.0.9"
@@ -41,6 +38,12 @@ jobs:
           export SUPPRESS_LOGGING=true
           export JAVA_OPTS="-Xmx2G"
 
-      - name: Rodar OWASP Dependency-Check
+      - name: Rodar OWASP Dependency-Check (modo offline para evitar downloads)
         run: |
-          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+          if [ -d ~/.dependency-check/data ]; then
+            echo "Executando Dependency-Check no modo offline..."
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --disableUpdate --disableNist --disableRetireJS --disableNodeAudit
+          else
+            echo "Cache não encontrado. Baixando base de dados..."
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+          fi
