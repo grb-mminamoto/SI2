@@ -30,15 +30,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Baixar e instalar a versão mais recente do OWASP Dependency-Check
+      - name: Configurar API Key da NVD
+        run: echo "export NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
-          DEPENDENCY_CHECK_VERSION=$(curl -s https://api.github.com/repos/jeremylong/DependencyCheck/releases/latest | jq -r '.tag_name' | sed 's/v//')
-          if [ -z "$DEPENDENCY_CHECK_VERSION" ]; then
-            echo "❌ Falha ao obter a versão mais recente do Dependency-Check."
-            exit 1
-          fi
+          DEPENDENCY_CHECK_VERSION="9.0.9"
           wget https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
           unzip dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
           export SUPPRESS_LOGGING=true
           export JAVA_OPTS="-Xmx2G"
-          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports || echo "⚠️ Dependency-Check falhou, mas o pipeline continuará..."
+
+      - name: Rodar OWASP Dependency-Check
+        run: |
+          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
