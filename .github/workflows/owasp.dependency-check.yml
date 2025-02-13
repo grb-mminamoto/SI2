@@ -20,6 +20,7 @@ jobs:
           key: ${{ runner.os }}-dependency-check-db
           restore-keys: |
             ${{ runner.os }}-dependency-check-db
+
       - name: Checkout código
         uses: actions/checkout@v4
 
@@ -35,10 +36,23 @@ jobs:
       - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
           DEPENDENCY_CHECK_VERSION="9.0.9"
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
-          unzip dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
+          if ! wget https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip; then
+            echo "❌ Falha ao baixar o Dependency-Check."
+            exit 1
+          fi
+          if ! unzip dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip; then
+            echo "❌ Falha ao descompactar o Dependency-Check."
+            exit 1
+          fi
+          chmod +x dependency-check/bin/dependency-check.sh
           export SUPPRESS_LOGGING=true
-          export JAVA_OPTS="-Xmx2G"
+          export JAVA_OPTS="-Xmx4G"
+
       - name: Rodar OWASP Dependency-Check
         run: |
           dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+
+      - name: Limpar Cache em Caso de Erro
+        if: failure()
+        run: |
+          rm -rf ~/.dependency-check/data
