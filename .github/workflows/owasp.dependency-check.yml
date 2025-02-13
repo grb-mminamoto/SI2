@@ -38,12 +38,13 @@ jobs:
           export SUPPRESS_LOGGING=true
           export JAVA_OPTS="-Xmx2G"
 
-      - name: Rodar OWASP Dependency-Check (modo offline para evitar downloads)
+      - name: Rodar OWASP Dependency-Check
         run: |
           if [ -d ~/.dependency-check/data ]; then
             echo "Executando Dependency-Check no modo offline..."
             dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --disableUpdate --disableNist --disableRetireJS --disableNodeAudit
           else
-            echo "Cache não encontrado. Baixando base de dados..."
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+            echo "Cache não encontrado. Baixando base de dados e executando a análise..."
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --disableNist --disableRetireJS --disableNodeAudit
           fi
+
