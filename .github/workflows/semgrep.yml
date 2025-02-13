@@ -1,0 +1,29 @@
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  semgrep-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar e atualizar Semgrep
+        run: pip install --upgrade semgrep
+
+      - name: Verificar instalação do Semgrep
+        run: semgrep --version
+
+      - name: Rodar Semgrep com regras de segurança
+        run: semgrep --config=p/security-audit --exclude '**/.git/**' --verbose --error
+
+      - name: Rodar Semgrep com regras personalizadas
+        run: semgrep --config=./semgrep-rules --exclude '**/.git/**' --include '**/*.java' --verbose .
