@@ -50,7 +50,6 @@ jobs:
 
       - name: Rodar OWASP Dependency-Check
         run: |
-          # dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --nvdApiKey $NVD_API_KEY --nvdApiDelay 10000
           dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --nvdApiKey $NVD_API_KEY --cisa
 
       - name: Limpar Cache em Caso de Erro
