@@ -42,9 +42,10 @@ jobs:
         run: |
           if [ -d ~/.dependency-check/data ]; then
             echo "Executando Dependency-Check no modo offline..."
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --disableUpdate --disableNist --disableRetireJS --disableNodeAudit
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit
           else
             echo "Cache não encontrado. Baixando base de dados e executando a análise..."
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --disableNist --disableRetireJS --disableNodeAudit
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit
           fi
+
 
