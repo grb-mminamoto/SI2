@@ -33,6 +33,10 @@ jobs:
       - name: Configurar API Key da NVD
         run: echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
 
+      - name: Configurar API Key da NVD
+        run: echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
+
+
       - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
           DEPENDENCY_CHECK_VERSION="9.0.9"
