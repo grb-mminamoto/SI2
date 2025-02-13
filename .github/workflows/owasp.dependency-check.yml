@@ -31,7 +31,7 @@ jobs:
           java-version: '17'
 
       - name: Configurar API Key da NVD
-        run: echo "export NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
+        run: echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
 
       - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
@@ -50,7 +50,7 @@ jobs:
 
       - name: Rodar OWASP Dependency-Check
         run: |
-          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --nvdApiKey $NVD_API_KEY
 
       - name: Limpar Cache em Caso de Erro
         if: failure()
