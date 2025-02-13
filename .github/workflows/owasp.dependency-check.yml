@@ -13,13 +13,13 @@ jobs:
   dependency-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Cache do OWASP Dependency-Check
+      - name: Cache do OWASP Dependency-Check Database
         uses: actions/cache@v3
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-dependency-check
+          path: ~/.dependency-check/data
+          key: ${{ runner.os }}-dependency-check-db
           restore-keys: |
-            ${{ runner.os }}-dependency-check
+            ${{ runner.os }}-dependency-check-db
 
       - name: Checkout código
         uses: actions/checkout@v4
@@ -40,4 +40,5 @@ jobs:
           wget https://github.com/jeremylong/DependencyCheck/releases/download/v${DEPENDENCY_CHECK_VERSION}/dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
           unzip dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
           export SUPPRESS_LOGGING=true
+          export JAVA_OPTS="-Xmx2G"
           dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports || echo "⚠️ Dependency-Check falhou, mas o pipeline continuará..."
