@@ -45,7 +45,9 @@ jobs:
             dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit
           else
             echo "Cache não encontrado. Baixando base de dados e executando a análise..."
+            # Permite o download uma vez para criar o banco de dados
+            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
+            # Agora o banco de dados está disponível, execute novamente em modo offline
             dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit
           fi
-
 
