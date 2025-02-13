@@ -16,11 +16,10 @@ jobs:
       - name: Cache do OWASP Dependency-Check Database
         uses: actions/cache@v3
         with:
-          path: ~/.dependency-check
-          key: ${{ runner.os }}-dependency-check-db-v2
+          path: ~/.dependency-check/data
+          key: ${{ runner.os }}-dependency-check-db
           restore-keys: |
-            ${{ runner.os }}-dependency-check-db-v2
-
+            ${{ runner.os }}-dependency-check-db
       - name: Checkout código
         uses: actions/checkout@v4
 
@@ -30,6 +29,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Configurar API Key da NVD
+        run: echo "export NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> $GITHUB_ENV
+
       - name: Baixar e instalar OWASP Dependency-Check (versão fixa)
         run: |
           DEPENDENCY_CHECK_VERSION="9.0.9"
@@ -37,18 +39,6 @@ jobs:
           unzip dependency-check-${DEPENDENCY_CHECK_VERSION}-release.zip
           export SUPPRESS_LOGGING=true
           export JAVA_OPTS="-Xmx2G"
-
       - name: Rodar OWASP Dependency-Check
         run: |
-          if [ -d ~/.dependency-check/data ]; then
-            echo "Executando Dependency-Check no modo offline..."
-            # Rodando o Dependency-Check no modo offline, sem atualizações
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit --disableCve --disableRetireJS
-          else
-            echo "Cache não encontrado. Baixando base de dados e executando a análise..."
-            # Permite o download uma vez para criar o banco de dados
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
-            # Agora o banco de dados está disponível, execute novamente em modo offline
-            dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports --noupdate --disableNodeAudit --disableCve --disableRetireJS
-          fi
-
+          dependency-check/bin/dependency-check.sh --scan . --format HTML --out reports
